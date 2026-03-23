@@ -1,0 +1,1656 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Comeback — Kyle's Financial Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #f5f0e8;
+  --bg2: #ede8dc;
+  --ink: #1a1612;
+  --ink2: #3d3830;
+  --muted: #9a9080;
+  --green: #2d6a4f;
+  --green-light: #52b788;
+  --red: #c1440e;
+  --gold: #c9a84c;
+  --gold-light: #e8c97a;
+  --surface: #fff9ef;
+  --border: #d4ccc0;
+  --shadow: rgba(26,22,18,0.08);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: 'Crimson Pro', serif;
+  font-size: 16px;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* NOISE TEXTURE OVERLAY */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+  pointer-events: none;
+  z-index: 1000;
+  opacity: 0.4;
+}
+
+/* HEADER */
+.header {
+  padding: 3rem 3rem 2rem;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  background: var(--surface);
+  position: relative;
+  overflow: hidden;
+}
+
+.header::after {
+  content: '◈';
+  position: absolute;
+  right: -20px;
+  top: -40px;
+  font-size: 220px;
+  color: var(--border);
+  opacity: 0.3;
+  line-height: 1;
+  pointer-events: none;
+}
+
+.header-left {}
+
+.eyebrow {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.65rem;
+  letter-spacing: 4px;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 0.5rem;
+}
+
+.title {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 4.5rem;
+  letter-spacing: 2px;
+  line-height: 0.9;
+  color: var(--ink);
+}
+
+.title span { color: var(--green); }
+
+.subtitle {
+  font-style: italic;
+  color: var(--muted);
+  font-size: 1.1rem;
+  margin-top: 0.5rem;
+}
+
+.header-right {
+  text-align: right;
+}
+
+.season-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: var(--green);
+  color: #fff;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.65rem;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  padding: 0.4rem 0.9rem;
+  border-radius: 2px;
+  margin-bottom: 0.75rem;
+}
+
+.season-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--green-light);
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse { 0%,100%{opacity:1;} 50%{opacity:0.4;} }
+
+.current-date {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.7rem;
+  color: var(--muted);
+}
+
+/* MONTH NAV */
+.month-bar {
+  background: var(--ink);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 3rem;
+}
+
+.month-nav-inner {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+.mnav-btn {
+  background: none;
+  border: 1px solid rgba(255,255,255,0.2);
+  color: #fff;
+  font-size: 1rem;
+  width: 28px;
+  height: 28px;
+  border-radius: 2px;
+  cursor: pointer;
+  transition: border-color 0.2s, background 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.mnav-btn:hover { border-color: var(--gold); background: rgba(201,168,76,0.1); }
+
+.mnav-label {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 1.4rem;
+  letter-spacing: 3px;
+  min-width: 200px;
+  text-align: center;
+}
+
+.month-income-badge {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.7rem;
+  color: var(--gold-light);
+  letter-spacing: 1px;
+}
+
+/* STATS ROW */
+.stats-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  border-bottom: 1px solid var(--border);
+}
+
+.stat {
+  padding: 2rem 2.5rem;
+  border-right: 1px solid var(--border);
+  position: relative;
+  background: var(--surface);
+  animation: fadeUp 0.4s ease both;
+}
+
+.stat:last-child { border-right: none; }
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: none; }
+}
+
+.stat:nth-child(1) { animation-delay: 0.05s; }
+.stat:nth-child(2) { animation-delay: 0.1s; }
+.stat:nth-child(3) { animation-delay: 0.15s; }
+.stat:nth-child(4) { animation-delay: 0.2s; }
+
+.stat-tag {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.6rem;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 0.5rem;
+}
+
+.stat-num {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 2.6rem;
+  letter-spacing: 1px;
+  line-height: 1;
+}
+
+.stat-num.green { color: var(--green); }
+.stat-num.red { color: var(--red); }
+.stat-num.gold { color: var(--gold); }
+
+.stat-sub {
+  font-size: 0.8rem;
+  color: var(--muted);
+  font-style: italic;
+  margin-top: 0.25rem;
+}
+
+/* MAIN GRID */
+.main {
+  display: grid;
+  grid-template-columns: 1fr 340px;
+  min-height: calc(100vh - 280px);
+}
+
+.left { border-right: 1px solid var(--border); }
+.right { background: var(--surface); }
+
+/* SECTION HEADERS */
+.sec-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.25rem 2.5rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.sec-title {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 1.1rem;
+  letter-spacing: 3px;
+  color: var(--ink2);
+}
+
+/* TABS */
+.tabs {
+  display: flex;
+  padding: 0 2.5rem;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg);
+}
+
+.tab {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.62rem;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--muted);
+  padding: 0.9rem 0;
+  margin-right: 2rem;
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+  background: none;
+  border-top: none;
+  border-left: none;
+  border-right: none;
+  transition: color 0.2s, border-color 0.2s;
+}
+
+.tab.active { color: var(--green); border-bottom-color: var(--green); }
+
+/* ADD TRANSACTION */
+.add-row {
+  display: grid;
+  grid-template-columns: 1fr 110px auto auto;
+  gap: 0.5rem;
+  padding: 1rem 2.5rem;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg2);
+  align-items: center;
+}
+
+.add-row input, .add-row select {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--ink);
+  font-family: 'Crimson Pro', serif;
+  font-size: 0.95rem;
+  padding: 0.55rem 0.75rem;
+  border-radius: 3px;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.add-row input:focus, .add-row select:focus { border-color: var(--green); }
+.add-row select option { background: var(--surface); }
+
+.type-tog {
+  display: flex;
+  border-radius: 3px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+}
+
+.type-tog button {
+  flex: 1;
+  padding: 0.55rem 0.6rem;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.6rem;
+  letter-spacing: 1px;
+  border: none;
+  cursor: pointer;
+  background: var(--surface);
+  color: var(--muted);
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+
+.type-tog button.on-inc { background: var(--green); color: #fff; }
+.type-tog button.on-exp { background: var(--red); color: #fff; }
+
+.btn-add {
+  background: var(--ink);
+  color: var(--bg);
+  border: none;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.65rem;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  padding: 0.55rem 1.1rem;
+  border-radius: 3px;
+  cursor: pointer;
+  transition: background 0.2s;
+  white-space: nowrap;
+}
+
+.btn-add:hover { background: var(--green); }
+
+/* CAT SELECT ROW */
+.cat-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr 1fr;
+  gap: 0.5rem;
+  padding: 0.5rem 2.5rem 0.75rem;
+  background: var(--bg2);
+  border-bottom: 1px solid var(--border);
+}
+
+.cat-row select, .cat-row input {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--ink);
+  font-family: 'Crimson Pro', serif;
+  font-size: 0.9rem;
+  padding: 0.4rem 0.6rem;
+  border-radius: 3px;
+  outline: none;
+}
+
+/* TRANSACTIONS */
+.tx-list { padding: 0.5rem 2.5rem 2rem; }
+
+.tx-item {
+  display: grid;
+  grid-template-columns: 28px 1fr auto auto;
+  gap: 0.75rem;
+  align-items: center;
+  padding: 0.9rem 0;
+  border-bottom: 1px solid var(--bg2);
+  animation: fadeUp 0.2s ease both;
+}
+
+.tx-item:last-child { border-bottom: none; }
+
+.tx-icon {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.7rem;
+  flex-shrink: 0;
+}
+
+.tx-icon.inc { background: rgba(45,106,79,0.12); color: var(--green); }
+.tx-icon.exp { background: rgba(193,68,14,0.1); color: var(--red); }
+
+.tx-name { font-size: 0.95rem; font-weight: 400; }
+.tx-meta {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.6rem;
+  color: var(--muted);
+  margin-top: 0.15rem;
+  letter-spacing: 1px;
+}
+
+.tx-amt {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.9rem;
+  font-weight: 500;
+  text-align: right;
+}
+
+.tx-amt.inc { color: var(--green); }
+.tx-amt.exp { color: var(--red); }
+
+.tx-del {
+  background: none;
+  border: none;
+  color: var(--border);
+  cursor: pointer;
+  font-size: 1rem;
+  line-height: 1;
+  transition: color 0.2s;
+  padding: 0;
+}
+
+.tx-del:hover { color: var(--red); }
+
+.empty {
+  text-align: center;
+  padding: 3rem;
+  color: var(--muted);
+  font-style: italic;
+  font-size: 1rem;
+}
+
+/* BREAKDOWN TAB */
+.breakdown { padding: 1.5rem 2.5rem; }
+
+.bk-item { margin-bottom: 1.25rem; }
+
+.bk-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 0.4rem;
+}
+
+.bk-label { font-size: 0.95rem; }
+
+.bk-vals {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.65rem;
+  color: var(--muted);
+}
+
+.bk-track {
+  height: 5px;
+  background: var(--bg2);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.bk-fill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.5s cubic-bezier(0.4,0,0.2,1);
+}
+
+/* RIGHT SIDEBAR */
+.side-block {
+  padding: 1.5rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.side-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.6rem;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 1.25rem;
+}
+
+/* DEBT CARDS */
+.debt-card {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 1rem;
+  margin-bottom: 0.75rem;
+}
+
+.debt-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 0.6rem;
+}
+
+.debt-name { font-size: 0.9rem; font-weight: 600; }
+
+.debt-badge {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.55rem;
+  letter-spacing: 1px;
+  padding: 0.2rem 0.5rem;
+  border-radius: 2px;
+  text-transform: uppercase;
+}
+
+.debt-badge.priority { background: rgba(193,68,14,0.12); color: var(--red); }
+.debt-badge.zero { background: rgba(45,106,79,0.12); color: var(--green); }
+.debt-badge.low { background: rgba(201,168,76,0.15); color: var(--gold); }
+
+.debt-amount {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 1.6rem;
+  letter-spacing: 1px;
+  color: var(--red);
+  line-height: 1;
+  margin-bottom: 0.5rem;
+}
+
+.debt-track {
+  height: 4px;
+  background: var(--bg2);
+  border-radius: 2px;
+  overflow: hidden;
+  margin-bottom: 0.35rem;
+}
+
+.debt-fill {
+  height: 100%;
+  border-radius: 2px;
+  background: var(--red);
+  transition: width 0.5s ease;
+}
+
+.debt-sub {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.6rem;
+  color: var(--muted);
+  display: flex;
+  justify-content: space-between;
+}
+
+/* EMERGENCY FUND */
+.fund-display {
+  text-align: center;
+  padding: 0.5rem 0 1rem;
+}
+
+.fund-ring {
+  position: relative;
+  width: 120px;
+  height: 120px;
+  margin: 0 auto 0.75rem;
+}
+
+.fund-ring svg {
+  transform: rotate(-90deg);
+}
+
+.fund-ring-center {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.fund-pct {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 1.8rem;
+  color: var(--green);
+  line-height: 1;
+}
+
+.fund-label-small {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.5rem;
+  color: var(--muted);
+  letter-spacing: 1px;
+}
+
+.fund-amount {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 1.3rem;
+  color: var(--green);
+}
+
+.fund-goal {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.65rem;
+  color: var(--muted);
+  margin-top: 0.2rem;
+}
+
+.fund-milestones {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+
+.milestone {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.5rem 0.75rem;
+  background: var(--bg);
+  border-radius: 3px;
+  border: 1px solid var(--border);
+}
+
+.milestone.reached { border-color: var(--green); background: rgba(45,106,79,0.06); }
+
+.ms-name { font-size: 0.82rem; }
+.ms-amt {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.65rem;
+  color: var(--muted);
+}
+
+.ms-check { color: var(--green); font-size: 0.9rem; }
+
+/* SEASON TRACKER */
+.season-bar {
+  display: flex;
+  gap: 4px;
+  margin-top: 0.5rem;
+}
+
+.season-month {
+  flex: 1;
+  height: 32px;
+  border-radius: 2px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.55rem;
+  letter-spacing: 0;
+  text-transform: uppercase;
+  font-weight: 500;
+  cursor: default;
+}
+
+.season-month.peak { background: var(--green); color: #fff; }
+.season-month.slow { background: var(--bg2); color: var(--muted); border: 1px solid var(--border); }
+.season-month.current { outline: 2px solid var(--gold); outline-offset: 1px; }
+
+/* AI INSIGHTS */
+.ai-box {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 1rem;
+  font-size: 0.9rem;
+  line-height: 1.7;
+  font-style: italic;
+  color: var(--ink2);
+  min-height: 80px;
+  white-space: pre-wrap;
+}
+
+.ai-box.loading { color: var(--muted); }
+
+.btn-ai {
+  width: 100%;
+  margin-top: 0.75rem;
+  background: transparent;
+  border: 1px solid var(--green);
+  color: var(--green);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.62rem;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  padding: 0.65rem;
+  border-radius: 3px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-ai:hover { background: var(--green); color: #fff; }
+
+/* SYNC */
+.sync-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.6rem 1.5rem;
+  background: var(--ink);
+  color: rgba(255,255,255,0.5);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.58rem;
+  letter-spacing: 1px;
+}
+
+.sync-indicator {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.sync-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--muted);
+}
+
+.sync-dot.ok { background: var(--green-light); }
+.sync-dot.busy { background: var(--gold); animation: pulse 0.8s infinite; }
+.sync-dot.err { background: var(--red); }
+
+.btn-sync {
+  background: none;
+  border: 1px solid rgba(255,255,255,0.15);
+  color: rgba(255,255,255,0.5);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.55rem;
+  letter-spacing: 1px;
+  padding: 0.3rem 0.7rem;
+  border-radius: 2px;
+  cursor: pointer;
+  transition: border-color 0.2s, color 0.2s;
+}
+
+.btn-sync:hover { border-color: var(--gold); color: var(--gold-light); }
+
+/* SETUP */
+#setup {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  background: var(--ink);
+  position: relative;
+  overflow: hidden;
+}
+
+#setup::before {
+  content: 'COMEBACK';
+  position: absolute;
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 22vw;
+  color: rgba(255,255,255,0.03);
+  letter-spacing: 10px;
+  pointer-events: none;
+  white-space: nowrap;
+}
+
+.setup-card {
+  max-width: 480px;
+  width: 100%;
+  position: relative;
+  z-index: 1;
+}
+
+.setup-logo {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 5rem;
+  letter-spacing: 4px;
+  color: #fff;
+  line-height: 1;
+  margin-bottom: 0.25rem;
+}
+
+.setup-logo span { color: var(--gold); }
+
+.setup-sub {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.62rem;
+  letter-spacing: 4px;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.3);
+  margin-bottom: 3rem;
+}
+
+.setup-step-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.6rem;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: var(--gold);
+  margin-bottom: 0.5rem;
+}
+
+.setup-title {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 2rem;
+  letter-spacing: 2px;
+  color: #fff;
+  margin-bottom: 0.5rem;
+}
+
+.setup-desc {
+  color: rgba(255,255,255,0.4);
+  font-style: italic;
+  font-size: 0.95rem;
+  margin-bottom: 2rem;
+  line-height: 1.6;
+}
+
+.setup-field {
+  margin-bottom: 1rem;
+}
+
+.setup-field label {
+  display: block;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.6rem;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.35);
+  margin-bottom: 0.4rem;
+}
+
+.setup-field input, .setup-field select {
+  width: 100%;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.12);
+  color: #fff;
+  font-family: 'Crimson Pro', serif;
+  font-size: 1rem;
+  padding: 0.8rem 1rem;
+  border-radius: 3px;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.setup-field input:focus, .setup-field select:focus {
+  border-color: var(--gold);
+}
+
+.setup-field input::placeholder { color: rgba(255,255,255,0.2); }
+
+.gist-note {
+  background: rgba(201,168,76,0.08);
+  border: 1px solid rgba(201,168,76,0.2);
+  border-radius: 3px;
+  padding: 0.9rem 1rem;
+  font-size: 0.82rem;
+  color: rgba(255,255,255,0.5);
+  line-height: 1.6;
+  margin-bottom: 1.5rem;
+}
+
+.gist-note a { color: var(--gold-light); }
+
+.btn-setup {
+  width: 100%;
+  background: var(--gold);
+  color: var(--ink);
+  border: none;
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 1.2rem;
+  letter-spacing: 3px;
+  padding: 0.9rem;
+  border-radius: 3px;
+  cursor: pointer;
+  transition: opacity 0.2s, transform 0.1s;
+  margin-top: 0.5rem;
+}
+
+.btn-setup:hover { opacity: 0.9; transform: translateY(-1px); }
+.btn-setup:active { transform: translateY(0); }
+
+.btn-back {
+  background: transparent;
+  border: 1px solid rgba(255,255,255,0.1);
+  color: rgba(255,255,255,0.3);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.6rem;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  padding: 0.5rem 1rem;
+  border-radius: 3px;
+  cursor: pointer;
+  margin-top: 0.75rem;
+  width: 100%;
+  transition: border-color 0.2s, color 0.2s;
+}
+
+.btn-back:hover { border-color: rgba(255,255,255,0.3); color: rgba(255,255,255,0.5); }
+
+@media (max-width: 900px) {
+  .stats-row { grid-template-columns: 1fr 1fr; }
+  .main { grid-template-columns: 1fr; }
+  .right { border-top: 1px solid var(--border); }
+  .add-row { grid-template-columns: 1fr 1fr; }
+  .title { font-size: 3rem; }
+}
+</style>
+</head>
+<body>
+
+<!-- SETUP -->
+<div id="setup">
+  <div class="setup-card">
+    <div class="setup-logo">Come<span>back</span></div>
+    <div class="setup-sub">Your financial fresh start</div>
+
+    <!-- Step 1 -->
+    <div id="s1">
+      <div class="setup-step-label">Step 01 / 02</div>
+      <div class="setup-title">Connect GitHub Storage</div>
+      <p class="setup-desc">Your data syncs privately across all devices via a secret GitHub Gist. Nobody else can see it.</p>
+      <div class="gist-note">
+        Go to <a href="https://github.com/settings/tokens" target="_blank">github.com/settings/tokens</a> → Generate new token (classic) → check <strong style="color:rgba(255,255,255,0.7)">gist</strong> scope only → paste it below.
+      </div>
+      <div class="setup-field">
+        <label>GitHub Personal Access Token</label>
+        <input type="password" id="gh-token" placeholder="ghp_xxxxxxxxxxxxxxxxxxxx">
+      </div>
+      <button class="btn-setup" onclick="validateToken()">Connect →</button>
+    </div>
+
+    <!-- Step 2 -->
+    <div id="s2" style="display:none">
+      <div class="setup-step-label">Step 02 / 02</div>
+      <div class="setup-title">Your Starting Numbers</div>
+      <p class="setup-desc">Pre-loaded with your real budget. Adjust anything that's changed.</p>
+      <div class="setup-field">
+        <label>Base Monthly Income ($)</label>
+        <input type="number" id="si-income" value="10241.90">
+      </div>
+      <div class="setup-field">
+        <label>Golf Season Bonus Income (May–Oct, monthly avg $)</label>
+        <input type="number" id="si-golf" value="6400">
+      </div>
+      <div class="setup-field">
+        <label>Divorce Lawyer Balance ($)</label>
+        <input type="number" id="si-lawyer" value="15000">
+      </div>
+      <div class="setup-field">
+        <label>Credit Card Balance ($)</label>
+        <input type="number" id="si-cc" value="6000">
+      </div>
+      <div class="setup-field">
+        <label>Emergency Fund Saved So Far ($)</label>
+        <input type="number" id="si-ef" value="0">
+      </div>
+      <button class="btn-setup" onclick="finishSetup()">Launch Comeback →</button>
+      <button class="btn-back" onclick="showStep(1)">← Back</button>
+    </div>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app" style="display:none">
+
+  <div class="sync-row">
+    <div class="sync-indicator">
+      <div class="sync-dot" id="sdot"></div>
+      <span id="slabel">Synced</span>
+    </div>
+    <button class="btn-sync" onclick="syncNow()">↑ Sync to GitHub</button>
+  </div>
+
+  <header class="header">
+    <div class="header-left">
+      <div class="eyebrow">Personal Finance Dashboard</div>
+      <div class="title">Come<span>back</span></div>
+      <div class="subtitle">Kyle Holmes · Fresh Start 2026</div>
+    </div>
+    <div class="header-right">
+      <div class="season-badge"><div class="season-dot"></div><span id="season-status">Off Season</span></div>
+      <div class="current-date" id="hdate"></div>
+    </div>
+  </header>
+
+  <div class="month-bar">
+    <div class="month-nav-inner">
+      <button class="mnav-btn" onclick="changeMonth(-1)">‹</button>
+      <div class="mnav-label" id="mlabel"></div>
+      <button class="mnav-btn" onclick="changeMonth(1)">›</button>
+    </div>
+    <div class="month-income-badge" id="income-badge"></div>
+  </div>
+
+  <div class="stats-row">
+    <div class="stat">
+      <div class="stat-tag">Monthly Income</div>
+      <div class="stat-num green" id="s-income">$0</div>
+      <div class="stat-sub" id="s-income-sub">logged this month</div>
+    </div>
+    <div class="stat">
+      <div class="stat-tag">Expenses</div>
+      <div class="stat-num red" id="s-exp">$0</div>
+      <div class="stat-sub">spent this month</div>
+    </div>
+    <div class="stat">
+      <div class="stat-tag">Net Surplus</div>
+      <div class="stat-num gold" id="s-net">$0</div>
+      <div class="stat-sub" id="s-net-sub">available to allocate</div>
+    </div>
+    <div class="stat">
+      <div class="stat-tag">Total Debt</div>
+      <div class="stat-num red" id="s-debt">$0</div>
+      <div class="stat-sub" id="s-debt-sub">remaining</div>
+    </div>
+  </div>
+
+  <div class="main">
+    <div class="left">
+      <div class="tabs">
+        <button class="tab active" onclick="switchTab('tx',this)">Transactions</button>
+        <button class="tab" onclick="switchTab('breakdown',this)">Breakdown</button>
+        <button class="tab" onclick="switchTab('plan',this)">Payoff Plan</button>
+      </div>
+
+      <div id="tab-tx">
+        <div class="add-row">
+          <input type="text" id="tx-desc" placeholder="Description (e.g. Meijer groceries)">
+          <input type="number" id="tx-amt" placeholder="Amount" step="0.01" min="0">
+          <div class="type-tog">
+            <button id="btn-inc" class="on-inc" onclick="setType('income')">+ In</button>
+            <button id="btn-exp" onclick="setType('expense')">− Out</button>
+          </div>
+          <button class="btn-add" onclick="addTx()">Add</button>
+        </div>
+        <div class="cat-row">
+          <select id="tx-cat">
+            <option>Housing</option>
+            <option>Food & Dining</option>
+            <option>Gas</option>
+            <option>Utilities</option>
+            <option>Insurance</option>
+            <option>Subscriptions</option>
+            <option>Health</option>
+            <option>Golf Income</option>
+            <option>Alimony</option>
+            <option>Debt Payment</option>
+            <option>Savings</option>
+            <option>Personal</option>
+            <option>Business</option>
+            <option>Other</option>
+          </select>
+          <input type="date" id="tx-date">
+          <select id="tx-note-preset" onchange="applyPreset(this.value)">
+            <option value="">Quick add preset...</option>
+            <option value="Rent|3300|expense|Housing">Rent $3,300</option>
+            <option value="Alimony|4500|expense|Alimony">Alimony $4,500</option>
+            <option value="Health Insurance|400|expense|Insurance">Health Insurance $400</option>
+            <option value="Starlink|125|expense|Subscriptions">Starlink $125</option>
+            <option value="Crunch Fitness|31.99|expense|Health">Crunch Fitness $31.99</option>
+            <option value="Delta Dental|56.04|expense|Insurance">Delta Dental $56.04</option>
+            <option value="DTE Energy|75|expense|Utilities">DTE ~$75</option>
+            <option value="Consumers Energy|100|expense|Utilities">Consumers ~$100</option>
+            <option value="SobrSafe|32.50|expense|Subscriptions">SobrSafe $32.50</option>
+            <option value="Student Loan|200|expense|Debt Payment">Student Loan $200</option>
+            <option value="SuperPro Payroll|4616.90|income|Business">SuperPro Payroll</option>
+            <option value="SuperPro Payment|5625|income|Business">SuperPro Payment</option>
+          </select>
+          <button class="btn-add" style="background:var(--green)" onclick="addTx()">+ Add</button>
+        </div>
+        <div class="tx-list" id="tx-list"></div>
+      </div>
+
+      <div id="tab-breakdown" style="display:none">
+        <div class="breakdown" id="breakdown-content"></div>
+      </div>
+
+      <div id="tab-plan" style="display:none">
+        <div style="padding:1.5rem 2.5rem">
+          <div id="plan-content"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SIDEBAR -->
+    <div class="right">
+
+      <!-- DEBT TRACKER -->
+      <div class="side-block">
+        <div class="side-label">Debt Payoff Tracker</div>
+
+        <div class="debt-card">
+          <div class="debt-top">
+            <div class="debt-name">Divorce Lawyer</div>
+            <div class="debt-badge priority">Priority #1</div>
+          </div>
+          <div class="debt-amount" id="d-lawyer">$15,000</div>
+          <div class="debt-track"><div class="debt-fill" id="df-lawyer" style="width:0%"></div></div>
+          <div class="debt-sub">
+            <span id="dl-paid">$0 paid</span>
+            <span id="dl-eta">ETA: calculating...</span>
+          </div>
+          <div style="margin-top:0.75rem;display:flex;gap:0.4rem">
+            <input type="number" id="lawyer-payment" placeholder="Payment amount" style="flex:1;background:var(--surface);border:1px solid var(--border);padding:0.4rem 0.6rem;border-radius:3px;font-family:'Crimson Pro',serif;font-size:0.85rem;color:var(--ink);outline:none">
+            <button onclick="makeDebtPayment('lawyer')" style="background:var(--red);color:#fff;border:none;padding:0.4rem 0.75rem;border-radius:3px;font-family:'JetBrains Mono',monospace;font-size:0.6rem;letter-spacing:1px;cursor:pointer">Pay</button>
+          </div>
+        </div>
+
+        <div class="debt-card">
+          <div class="debt-top">
+            <div class="debt-name">Credit Card</div>
+            <div class="debt-badge zero">0% APR · 16mo</div>
+          </div>
+          <div class="debt-amount" id="d-cc">$6,000</div>
+          <div class="debt-track"><div class="debt-fill" id="df-cc" style="width:0%;background:var(--gold)"></div></div>
+          <div class="debt-sub">
+            <span id="dc-paid">$0 paid</span>
+            <span style="color:var(--green)">Pay before 0% expires</span>
+          </div>
+          <div style="margin-top:0.75rem;display:flex;gap:0.4rem">
+            <input type="number" id="cc-payment" placeholder="Payment amount" style="flex:1;background:var(--surface);border:1px solid var(--border);padding:0.4rem 0.6rem;border-radius:3px;font-family:'Crimson Pro',serif;font-size:0.85rem;color:var(--ink);outline:none">
+            <button onclick="makeDebtPayment('cc')" style="background:var(--gold);color:var(--ink);border:none;padding:0.4rem 0.75rem;border-radius:3px;font-family:'JetBrains Mono',monospace;font-size:0.6rem;letter-spacing:1px;cursor:pointer">Pay</button>
+          </div>
+        </div>
+
+        <div class="debt-card">
+          <div class="debt-top">
+            <div class="debt-name">Student Loan</div>
+            <div class="debt-badge low">Min payments</div>
+          </div>
+          <div style="font-family:'JetBrains Mono',monospace;font-size:0.7rem;color:var(--muted)">$200/mo minimum · revisit after lawyer paid</div>
+        </div>
+      </div>
+
+      <!-- EMERGENCY FUND -->
+      <div class="side-block">
+        <div class="side-label">Emergency Fund</div>
+        <div class="fund-display">
+          <div class="fund-ring">
+            <svg width="120" height="120" viewBox="0 0 120 120">
+              <circle cx="60" cy="60" r="50" fill="none" stroke="#e8e0d0" stroke-width="8"/>
+              <circle cx="60" cy="60" r="50" fill="none" stroke="#2d6a4f" stroke-width="8"
+                stroke-dasharray="314.16" id="fund-arc" stroke-dashoffset="314.16"
+                stroke-linecap="round" style="transition:stroke-dashoffset 0.8s cubic-bezier(0.4,0,0.2,1)"/>
+            </svg>
+            <div class="fund-ring-center">
+              <div class="fund-pct" id="fund-pct">0%</div>
+              <div class="fund-label-small">FUNDED</div>
+            </div>
+          </div>
+          <div class="fund-amount" id="fund-saved">$0</div>
+          <div class="fund-goal" id="fund-goal-label">of $17,685 goal (3 months)</div>
+        </div>
+        <div style="margin-top:0.5rem;display:flex;gap:0.4rem">
+          <input type="number" id="ef-add" placeholder="Add to fund" style="flex:1;background:var(--bg);border:1px solid var(--border);padding:0.4rem 0.6rem;border-radius:3px;font-family:'Crimson Pro',serif;font-size:0.85rem;color:var(--ink);outline:none">
+          <button onclick="addToFund()" style="background:var(--green);color:#fff;border:none;padding:0.4rem 0.75rem;border-radius:3px;font-family:'JetBrains Mono',monospace;font-size:0.6rem;letter-spacing:1px;cursor:pointer">Add</button>
+        </div>
+        <div class="fund-milestones" id="milestones"></div>
+      </div>
+
+      <!-- GOLF SEASON -->
+      <div class="side-block">
+        <div class="side-label">Golf Season Income</div>
+        <div style="font-family:'JetBrains Mono',monospace;font-size:0.65rem;color:var(--muted);margin-bottom:0.75rem">2026 Target: $45,000</div>
+        <div class="season-bar" id="season-bar"></div>
+        <div style="margin-top:0.75rem">
+          <div style="display:flex;justify-content:space-between;font-family:'JetBrains Mono',monospace;font-size:0.6rem;color:var(--muted);margin-bottom:0.3rem">
+            <span>YTD Golf Income</span>
+            <span id="golf-ytd">$0</span>
+          </div>
+          <div style="height:4px;background:var(--bg2);border-radius:2px;overflow:hidden">
+            <div id="golf-bar" style="height:100%;background:var(--green);border-radius:2px;width:0%;transition:width 0.5s ease"></div>
+          </div>
+          <div style="font-family:'JetBrains Mono',monospace;font-size:0.58rem;color:var(--muted);margin-top:0.3rem;text-align:right" id="golf-pct">0% of $45k goal</div>
+        </div>
+      </div>
+
+      <!-- AI COACH -->
+      <div class="side-block">
+        <div class="side-label">AI Financial Coach</div>
+        <div class="ai-box" id="ai-box">Hit the button below for a personalized read on your comeback progress.</div>
+        <button class="btn-ai" onclick="getInsights()">✦ Analyze My Comeback</button>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+// ========== STATE ==========
+let S = {
+  token: '', gistId: '',
+  baseIncome: 10241.90,
+  golfIncome: 6400,
+  lawyerBalance: 15000,
+  lawyerOriginal: 15000,
+  ccBalance: 6000,
+  ccOriginal: 6000,
+  efSaved: 0,
+  transactions: [],
+  currentMonth: new Date().toISOString().slice(0,7)
+};
+
+let txType = 'income';
+let autoTimer;
+
+const GOLF_MONTHS = ['05','06','07','08','09','10'];
+const MONTH_NAMES = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+// ========== SETUP ==========
+function showStep(n) {
+  document.getElementById('s1').style.display = n===1?'block':'none';
+  document.getElementById('s2').style.display = n===2?'block':'none';
+}
+
+async function validateToken() {
+  const t = document.getElementById('gh-token').value.trim();
+  if (!t) return alert('Please enter your GitHub token.');
+  S.token = t;
+  try {
+    const r = await fetch('https://api.github.com/user', { headers: { Authorization: `token ${t}` } });
+    if (!r.ok) throw new Error();
+    showStep(2);
+  } catch { alert('Invalid token. Check and try again.'); }
+}
+
+async function finishSetup() {
+  S.baseIncome = parseFloat(document.getElementById('si-income').value) || 10241.90;
+  S.golfIncome = parseFloat(document.getElementById('si-golf').value) || 6400;
+  S.lawyerBalance = parseFloat(document.getElementById('si-lawyer').value) || 15000;
+  S.lawyerOriginal = S.lawyerBalance;
+  S.ccBalance = parseFloat(document.getElementById('si-cc').value) || 6000;
+  S.ccOriginal = S.ccBalance;
+  S.efSaved = parseFloat(document.getElementById('si-ef').value) || 0;
+  await loadOrCreateGist();
+  launch();
+}
+
+// ========== GIST ==========
+async function loadOrCreateGist() {
+  setSync('busy','Connecting...');
+  try {
+    const r = await fetch('https://api.github.com/gists', { headers: { Authorization: `token ${S.token}` } });
+    const gs = await r.json();
+    const ex = gs.find(g => g.files['comeback-data.json']);
+    if (ex) {
+      S.gistId = ex.id;
+      const d = await (await fetch(ex.url, { headers: { Authorization: `token ${S.token}` } })).json();
+      const c = JSON.parse(d.files['comeback-data.json'].content);
+      Object.assign(S, c);
+    } else {
+      const resp = await fetch('https://api.github.com/gists', {
+        method: 'POST',
+        headers: { Authorization: `token ${S.token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ description: 'Comeback Finance Dashboard', public: false,
+          files: { 'comeback-data.json': { content: JSON.stringify(saveData()) } } })
+      });
+      S.gistId = (await resp.json()).id;
+    }
+    setSync('ok','Synced');
+  } catch { setSync('err','Error'); }
+}
+
+function saveData() {
+  return { baseIncome: S.baseIncome, golfIncome: S.golfIncome,
+    lawyerBalance: S.lawyerBalance, lawyerOriginal: S.lawyerOriginal,
+    ccBalance: S.ccBalance, ccOriginal: S.ccOriginal,
+    efSaved: S.efSaved, transactions: S.transactions };
+}
+
+async function syncNow() {
+  if (!S.gistId) return;
+  setSync('busy','Syncing...');
+  try {
+    await fetch(`https://api.github.com/gists/${S.gistId}`, {
+      method: 'PATCH',
+      headers: { Authorization: `token ${S.token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ files: { 'comeback-data.json': { content: JSON.stringify(saveData()) } } })
+    });
+    setSync('ok','Synced');
+  } catch { setSync('err','Sync failed'); }
+}
+
+function autoSync() {
+  clearTimeout(autoTimer);
+  setSync('busy','Saving...');
+  autoTimer = setTimeout(syncNow, 2000);
+}
+
+function setSync(state, label) {
+  const d = document.getElementById('sdot');
+  d.className = 'sync-dot ' + state;
+  document.getElementById('slabel').textContent = label;
+}
+
+// ========== LAUNCH ==========
+function launch() {
+  document.getElementById('setup').style.display = 'none';
+  document.getElementById('app').style.display = 'block';
+  setTodayDate();
+  updateSeasonStatus();
+  renderAll();
+}
+
+function setTodayDate() {
+  const now = new Date();
+  document.getElementById('hdate').textContent = now.toLocaleDateString('en-US',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+  document.getElementById('tx-date').value = now.toISOString().slice(0,10);
+  const m = now.getMonth()+1;
+  const isGolf = GOLF_MONTHS.includes(String(m).padStart(2,'0'));
+  document.getElementById('season-status').textContent = isGolf ? '⛳ Golf Season Active' : 'Off Season';
+}
+
+function updateSeasonStatus() {
+  const [y,m] = S.currentMonth.split('-');
+  const isGolf = GOLF_MONTHS.includes(m);
+  const inc = isGolf ? S.baseIncome + S.golfIncome : S.baseIncome;
+  document.getElementById('income-badge').textContent = isGolf
+    ? `⛳ Golf season · est. ${fmt(inc)}/mo`
+    : `Base season · ${fmt(inc)}/mo`;
+}
+
+// ========== MONTH NAV ==========
+function changeMonth(d) {
+  const [y,m] = S.currentMonth.split('-').map(Number);
+  const nd = new Date(y, m-1+d);
+  S.currentMonth = nd.toISOString().slice(0,7);
+  updateSeasonStatus();
+  renderAll();
+}
+
+function getMonthTx() {
+  return S.transactions.filter(t => t.month === S.currentMonth);
+}
+
+// ========== TRANSACTIONS ==========
+function setType(t) {
+  txType = t;
+  document.getElementById('btn-inc').className = t==='income'?'on-inc':'';
+  document.getElementById('btn-exp').className = t==='expense'?'on-exp':'';
+}
+
+function applyPreset(v) {
+  if (!v) return;
+  const [desc, amt, type, cat] = v.split('|');
+  document.getElementById('tx-desc').value = desc;
+  document.getElementById('tx-amt').value = amt;
+  document.getElementById('tx-cat').value = cat;
+  setType(type);
+  document.getElementById('tx-note-preset').value = '';
+}
+
+function addTx() {
+  const desc = document.getElementById('tx-desc').value.trim();
+  const amt = parseFloat(document.getElementById('tx-amt').value);
+  const cat = document.getElementById('tx-cat').value;
+  const date = document.getElementById('tx-date').value || new Date().toISOString().slice(0,10);
+  if (!desc || !amt) return;
+  S.transactions.push({ id: Date.now(), desc, amt, cat, type: txType, date, month: S.currentMonth });
+  document.getElementById('tx-desc').value = '';
+  document.getElementById('tx-amt').value = '';
+  renderAll();
+  autoSync();
+}
+
+function delTx(id) {
+  S.transactions = S.transactions.filter(t => t.id !== id);
+  renderAll();
+  autoSync();
+}
+
+// ========== DEBT ==========
+function makeDebtPayment(which) {
+  const input = document.getElementById(which === 'lawyer' ? 'lawyer-payment' : 'cc-payment');
+  const amt = parseFloat(input.value);
+  if (!amt || amt <= 0) return;
+  if (which === 'lawyer') {
+    S.lawyerBalance = Math.max(0, S.lawyerBalance - amt);
+    S.transactions.push({ id: Date.now(), desc: 'Divorce Lawyer Payment', amt, cat: 'Debt Payment', type: 'expense', date: new Date().toISOString().slice(0,10), month: S.currentMonth });
+  } else {
+    S.ccBalance = Math.max(0, S.ccBalance - amt);
+    S.transactions.push({ id: Date.now(), desc: 'Credit Card Payment', amt, cat: 'Debt Payment', type: 'expense', date: new Date().toISOString().slice(0,10), month: S.currentMonth });
+  }
+  input.value = '';
+  renderAll();
+  autoSync();
+}
+
+// ========== EMERGENCY FUND ==========
+function addToFund() {
+  const amt = parseFloat(document.getElementById('ef-add').value);
+  if (!amt || amt <= 0) return;
+  S.efSaved += amt;
+  S.transactions.push({ id: Date.now(), desc: 'Emergency Fund Deposit', amt, cat: 'Savings', type: 'expense', date: new Date().toISOString().slice(0,10), month: S.currentMonth });
+  document.getElementById('ef-add').value = '';
+  renderAll();
+  autoSync();
+}
+
+// ========== RENDER ==========
+function fmt(n) { return '$' + Math.abs(n).toLocaleString('en-US',{minimumFractionDigits:0,maximumFractionDigits:0}); }
+function fmtd(n) { return '$' + Math.abs(n).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}); }
+
+function renderAll() {
+  const txs = getMonthTx();
+  const inc = txs.filter(t=>t.type==='income').reduce((s,t)=>s+t.amt,0);
+  const exp = txs.filter(t=>t.type==='expense').reduce((s,t)=>s+t.amt,0);
+  const net = inc - exp;
+  const totalDebt = S.lawyerBalance + S.ccBalance;
+
+  // Month label
+  const [y,m] = S.currentMonth.split('-');
+  document.getElementById('mlabel').textContent =
+    new Date(parseInt(y),parseInt(m)-1).toLocaleDateString('en-US',{month:'long',year:'numeric'}).toUpperCase();
+
+  // Stats
+  document.getElementById('s-income').textContent = fmt(inc);
+  document.getElementById('s-exp').textContent = fmt(exp);
+  document.getElementById('s-net').textContent = fmt(net);
+  document.getElementById('s-net').style.color = net >= 0 ? 'var(--gold)' : 'var(--red)';
+  document.getElementById('s-debt').textContent = fmt(totalDebt);
+
+  renderTxList(txs);
+  renderBreakdown(txs);
+  renderDebt();
+  renderFund();
+  renderSeasonBar();
+  renderPlan();
+}
+
+function renderTxList(txs) {
+  const el = document.getElementById('tx-list');
+  const sorted = [...txs].sort((a,b)=>b.date.localeCompare(a.date));
+  if (!sorted.length) {
+    el.innerHTML = '<div class="empty">No transactions this month yet.<br>Add your first one above or use a preset.</div>';
+    return;
+  }
+  el.innerHTML = sorted.map(t => `
+    <div class="tx-item">
+      <div class="tx-icon ${t.type==='income'?'inc':'exp'}">${t.type==='income'?'↑':'↓'}</div>
+      <div>
+        <div class="tx-name">${t.desc}</div>
+        <div class="tx-meta">${t.cat} · ${t.date}</div>
+      </div>
+      <div class="tx-amt ${t.type==='income'?'inc':'exp'}">${t.type==='income'?'+':'-'}${fmtd(t.amt)}</div>
+      <button class="tx-del" onclick="delTx(${t.id})">×</button>
+    </div>
+  `).join('');
+}
+
+function renderBreakdown(txs) {
+  const el = document.getElementById('breakdown-content');
+  const catSpend = {};
+  txs.filter(t=>t.type==='expense').forEach(t => { catSpend[t.cat]=(catSpend[t.cat]||0)+t.amt; });
+  const sorted = Object.entries(catSpend).sort((a,b)=>b[1]-a[1]);
+  const max = Math.max(...sorted.map(e=>e[1]),1);
+  if (!sorted.length) { el.innerHTML = '<div class="empty">No expenses logged this month.</div>'; return; }
+  el.innerHTML = sorted.map(([cat,amt])=>{
+    const pct = (amt/max)*100;
+    const color = cat==='Alimony'||cat==='Debt Payment'?'var(--red)':cat==='Savings'?'var(--green)':'var(--gold)';
+    return `
+      <div class="bk-item">
+        <div class="bk-head"><span class="bk-label">${cat}</span><span class="bk-vals">${fmtd(amt)}</span></div>
+        <div class="bk-track"><div class="bk-fill" style="width:${pct}%;background:${color}"></div></div>
+      </div>`;
+  }).join('');
+}
+
+function renderDebt() {
+  // Lawyer
+  const lPaid = S.lawyerOriginal - S.lawyerBalance;
+  const lPct = Math.min(100,(lPaid/S.lawyerOriginal)*100);
+  document.getElementById('d-lawyer').textContent = fmt(S.lawyerBalance);
+  document.getElementById('df-lawyer').style.width = lPct + '%';
+  document.getElementById('dl-paid').textContent = fmt(lPaid) + ' paid';
+  // ETA: based on ~$5k/mo golf season payments
+  if (S.lawyerBalance > 0) {
+    const mos = Math.ceil(S.lawyerBalance / 5000);
+    document.getElementById('dl-eta').textContent = `~${mos} mo to clear`;
+  } else {
+    document.getElementById('dl-eta').textContent = '✓ Paid off!';
+    document.getElementById('dl-eta').style.color = 'var(--green)';
+  }
+
+  // CC
+  const cPaid = S.ccOriginal - S.ccBalance;
+  const cPct = Math.min(100,(cPaid/S.ccOriginal)*100);
+  document.getElementById('d-cc').textContent = fmt(S.ccBalance);
+  document.getElementById('df-cc').style.width = cPct + '%';
+  document.getElementById('dc-paid').textContent = fmt(cPaid) + ' paid';
+
+  // Total
+  document.getElementById('s-debt').textContent = fmt(S.lawyerBalance + S.ccBalance);
+}
+
+function renderFund() {
+  const goal3 = 17685;
+  const pct = Math.min(100,(S.efSaved/goal3)*100);
+  const arc = 314.16 * (1 - pct/100);
+  document.getElementById('fund-arc').style.strokeDashoffset = arc;
+  document.getElementById('fund-pct').textContent = Math.round(pct) + '%';
+  document.getElementById('fund-saved').textContent = fmtd(S.efSaved);
+  document.getElementById('fund-goal-label').textContent = `of ${fmt(goal3)} goal (3 months)`;
+
+  const milestones = [
+    { label: '1 Month Buffer', amt: 5895 },
+    { label: '3 Months (Solid)', amt: 17685 },
+    { label: '6 Months (Secure)', amt: 35370 }
+  ];
+
+  document.getElementById('milestones').innerHTML = milestones.map(ms => {
+    const reached = S.efSaved >= ms.amt;
+    return `<div class="milestone ${reached?'reached':''}">
+      <span class="ms-name">${ms.label}</span>
+      <div style="display:flex;align-items:center;gap:0.5rem">
+        <span class="ms-amt">${fmt(ms.amt)}</span>
+        ${reached ? '<span class="ms-check">✓</span>' : ''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function renderSeasonBar() {
+  const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const peakIdx = [4,5,6,7,8,9]; // May–Oct
+  const now = new Date();
+  const curM = now.getMonth();
+
+  document.getElementById('season-bar').innerHTML = months.map((m,i) => {
+    const isPeak = peakIdx.includes(i);
+    const isCur = i === curM;
+    return `<div class="season-month ${isPeak?'peak':'slow'} ${isCur?'current':''}" title="${m}">${m[0]}</div>`;
+  }).join('');
+
+  // Golf YTD
+  const golfTx = S.transactions.filter(t => t.cat === 'Golf Income' && t.type === 'income');
+  const golfYTD = golfTx.reduce((s,t)=>s+t.amt,0);
+  const golfPct = Math.min(100,(golfYTD/45000)*100);
+  document.getElementById('golf-ytd').textContent = fmtd(golfYTD);
+  document.getElementById('golf-bar').style.width = golfPct + '%';
+  document.getElementById('golf-pct').textContent = Math.round(golfPct) + '% of $45k goal';
+}
+
+function renderPlan() {
+  const el = document.getElementById('plan-content');
+  const totalDebt = S.lawyerBalance + S.ccBalance;
+  const monthlyGolfSurplus = 7446;
+  const monthlyOffSurplus = 1046;
+  const efGoal = 17685;
+  const efRemaining = Math.max(0, efGoal - S.efSaved);
+
+  el.innerHTML = `
+    <div style="margin-bottom:2rem">
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:1.8rem;letter-spacing:2px;color:var(--ink);margin-bottom:0.25rem">Your Comeback Roadmap</div>
+      <div style="font-style:italic;color:var(--muted);font-size:0.95rem">Based on your real numbers · updates as you log payments</div>
+    </div>
+
+    <div style="display:grid;gap:1rem">
+      ${planCard('⚡', 'April', 'Rent already paid — seed your emergency fund immediately', `Use the $3,300 freed-up rent to deposit into a high-yield savings account (Marcus or Ally, ~4.5% APY). This seeds your emergency fund and starts earning interest from day one.`, 'var(--gold)')}
+      ${planCard('⛳', 'May', 'Golf season starts — attack the lawyer debt', `With ~${fmt(monthlyGolfSurplus)} monthly surplus, throw $5,000+ directly at the lawyer balance. At this rate you clear ${fmt(S.lawyerBalance)} in ${Math.ceil(S.lawyerBalance/5000)} month${Math.ceil(S.lawyerBalance/5000)===1?'':'s'}.`, 'var(--green)')}
+      ${planCard('🎯', 'June–July', 'Emergency fund to 3 months', `Lawyer on track to be cleared. Redirect surplus to hit the ${fmt(efGoal)} emergency fund milestone. This is your financial foundation — nothing feels better than having 3 months in the bank.`, 'var(--green)')}
+      ${planCard('💳', 'Month 15', 'Pay CC in full before 0% expires', `You have time — don't rush the CC while the lawyer balance is higher priority. Plan one lump payment of ${fmt(S.ccBalance)} before the 0% window closes. Put a reminder in your calendar now.`, 'var(--gold)')}
+      ${planCard('🏦', 'End of Season', 'Stack wealth, not just stability', `By October you could be debt-free with a funded emergency account. Every dollar after that starts building real wealth — investments, business growth, a home for you and your kids.`, 'var(--green)')}
+    </div>
+
+    <div style="margin-top:2rem;padding:1.5rem;background:var(--bg2);border-radius:4px;border:1px solid var(--border)">
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:1.1rem;letter-spacing:2px;margin-bottom:0.75rem">Net Worth Trajectory</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:1rem;text-align:center">
+        <div>
+          <div style="font-family:'JetBrains Mono',monospace;font-size:0.6rem;color:var(--muted);letter-spacing:2px;margin-bottom:0.25rem">TODAY</div>
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:1.5rem;color:var(--red)">${fmt(-(totalDebt))}</div>
+          <div style="font-size:0.75rem;color:var(--muted);font-style:italic">in debt</div>
+        </div>
+        <div>
+          <div style="font-family:'JetBrains Mono',monospace;font-size:0.6rem;color:var(--muted);letter-spacing:2px;margin-bottom:0.25rem">AUGUST</div>
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:1.5rem;color:var(--gold)">${fmt(efGoal)}</div>
+          <div style="font-size:0.75rem;color:var(--muted);font-style:italic">in savings</div>
+        </div>
+        <div>
+          <div style="font-family:'JetBrains Mono',monospace;font-size:0.6rem;color:var(--muted);letter-spacing:2px;margin-bottom:0.25rem">END OF YEAR</div>
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:1.5rem;color:var(--green)">$40,000+</div>
+          <div style="font-size:0.75rem;color:var(--muted);font-style:italic">net positive</div>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function planCard(icon, month, headline, body, color) {
+  return `
+    <div style="display:grid;grid-template-columns:40px 1fr;gap:1rem;padding:1.25rem;background:var(--surface);border:1px solid var(--border);border-left:3px solid ${color};border-radius:3px">
+      <div style="font-size:1.5rem;line-height:1.2">${icon}</div>
+      <div>
+        <div style="font-family:'JetBrains Mono',monospace;font-size:0.6rem;letter-spacing:2px;color:${color};text-transform:uppercase;margin-bottom:0.25rem">${month}</div>
+        <div style="font-weight:600;font-size:1rem;margin-bottom:0.35rem">${headline}</div>
+        <div style="font-size:0.88rem;color:var(--ink2);line-height:1.6">${body}</div>
+      </div>
+    </div>`;
+}
+
+// ========== TABS ==========
+function switchTab(tab, btn) {
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('tab-tx').style.display = tab==='tx'?'block':'none';
+  document.getElementById('tab-breakdown').style.display = tab==='breakdown'?'block':'none';
+  document.getElementById('tab-plan').style.display = tab==='plan'?'block':'none';
+  if (tab==='breakdown') renderBreakdown(getMonthTx());
+  if (tab==='plan') renderPlan();
+}
+
+// ========== AI COACH ==========
+async function getInsights() {
+  const el = document.getElementById('ai-box');
+  el.className = 'ai-box loading';
+  el.textContent = 'Analyzing your comeback...';
+
+  const txs = getMonthTx();
+  const inc = txs.filter(t=>t.type==='income').reduce((s,t)=>s+t.amt,0);
+  const exp = txs.filter(t=>t.type==='expense').reduce((s,t)=>s+t.amt,0);
+
+  const prompt = `You are a straight-talking financial coach for Kyle, a golf instructor going through a divorce and rebuilding his finances.
+
+His situation:
+- Base monthly income: $10,242 (salary from SuperPro Golf)
+- Golf instruction income (May–Oct): ~$6,400/mo extra, $45k annual goal
+- Monthly obligations: $4,500 alimony, $3,300 rent, ~$1,400 other fixed expenses
+- Debts: $${S.lawyerBalance.toFixed(0)} divorce lawyer (priority #1), $${S.ccBalance.toFixed(0)} credit card (0% APR, ~16 months left), student loan $200/mo
+- Emergency fund: $${S.efSaved.toFixed(0)} saved (goal: $17,685 = 3 months expenses)
+- This month logged income: $${inc.toFixed(0)}, expenses: $${exp.toFixed(0)}
+- Current month: ${S.currentMonth}
+
+Give Kyle 3-4 specific, actionable coaching insights about where he stands and what to do next. Be direct, encouraging, and practical. Reference his specific numbers. No generic advice. Plain text only, no markdown or bullet symbols.`;
+
+  try {
+    const r = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 1000,
+        messages: [{ role: 'user', content: prompt }] })
+    });
+    const data = await r.json();
+    el.className = 'ai-box';
+    el.textContent = data.content[0].text;
+  } catch {
+    el.className = 'ai-box';
+    el.textContent = 'Could not load insights. Check your connection and try again.';
+  }
+}
+
+// ========== INIT ==========
+const saved = sessionStorage.getItem('cb-token');
+if (saved) { S.token = saved; document.getElementById('gh-token').value = saved; }
+</script>
+</body>
+</html>
